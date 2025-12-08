@@ -1,0 +1,64 @@
+# -----------------------------
+# Python cache & compiled files
+# -----------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc.*
+
+# -----------------------------
+# Build / packaging artifacts
+# -----------------------------
+*.egg-info/
+*.egg
+dist/
+build/
+pip-wheel-metadata/
+
+# -----------------------------
+# Virtual environments
+# -----------------------------
+venv/
+.venv/
+env/
+ENV/
+
+# Termux venv paths (optional)
+data/data/com.termux/files/usr/tmp/
+
+# -----------------------------
+# Pytest & Coverage
+# -----------------------------
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# -----------------------------
+# Editor / IDE files
+# -----------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*~
+
+# -----------------------------
+# OS / filesystem artifacts
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# Project-specific ignores
+# -----------------------------
+# Avoid accidentally committing local scripts, experiments, or logs.
+local/
+logs/
+scratch/
+notebooks/
+
+# Ignore generated README bundles
+xkernel_readme.zip
