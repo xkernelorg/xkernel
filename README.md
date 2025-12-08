@@ -1,29 +1,30 @@
 # 🌀 xkernel
-### Minimal Deterministic X-Field Engine with Lens Architecture  
-Version: 0.1.0  
+### Minimal Deterministic X-Field Engine with Modular Lens Architecture
+Version: **0.2.0**
 Engine: `XKernel`
 
 ---
 
 ## Overview
 
-**xkernel** is a lightweight, deterministic computational engine for evolving
-1-D lattices of real-valued vectors.  
-Each lattice site holds an **X-vector** in ℝ⁶ (configurable), and each timestep
-applies a strictly local, strictly deterministic update rule of the form:
+**xkernel** is a lightweight, deterministic computational engine for evolving  
+**1-D lattices of real-valued vectors**.
+
+Each lattice site holds an **X-vector** in ℝ⁶ (configurable).  
+Each timestep applies a strictly local, strictly deterministic update rule:
 
 \[
-X_i(t+1) = X_i(t) \, + \, \eta \left( 
-A\,X_i(t) \, + \, B\,[X_{i-1}(t) + X_{i+1}(t)]
-\right)
+X_i(t+1) = X_i(t) \\;+\; \eta\Big(A X_i(t) \\;+\; B\,[X_{i-1}(t) + X_{i+1}(t)]\Big)
 \]
 
-- Completely deterministic  
-- Pure Python, zero dependencies  
-- Full state export to JSON  
-- Extensible **lens system** (waveforms, geometric views, etc.)  
-- Clean, stable API suitable for embedding in larger systems  
-- Used as a computational substrate for EuMech, DAT, GTORC, and waveform viewers
+Key properties:
+
+- **Deterministic**: no randomness, fully reproducible  
+- **Pure Python**, zero dependencies  
+- **Stable JSON trace export**  
+- **Modular lens system**: different higher-level interpretations of the same dynamics  
+- **Used as a computational substrate** for EuMech, DAT, GTORC, waveform viewers, and geometric analysis  
+- **Includes Einstein / Schrödinger / Shannon information lenses**
 
 ---
 
@@ -35,19 +36,26 @@ xkernel/
 ├── pyproject.toml
 ├── src/
 │   └── xkernel/
-│       ├── __init__.py          # clean public API
-│       ├── xkernel.py           # core engine
-│       ├── lens_wave.py         # waveform lens (sine/square/triangle/saw)
-│       └── viewer_bounce_dot.py # simple ASCII bounce visualization
+│       ├── xkernel.py             # core deterministic engine
+│       ├── cli.py                 # command-line entry points
+│       ├── lens_wave.py           # waveform lens (analytic + engine-driven)
+│       ├── lens_einstein.py       # curvature / strain / energy lens
+│       ├── lens_schrodinger.py    # amplitude / phase decomposition lens
+│       ├── lens_shannon.py        # entropy-based information lens
+│       ├── viewer_bounce_dot.py   # ASCII simulation viewer
+│       ├── demo_einstein.py       # engine → wave → Einstein projection
+│       ├── demo_schrodinger.py    # engine → wave → Schrödinger projection
+│       └── demo_shannon.py        # engine → wave → Shannon projection
 └── tests/
-    └── test_xkernel_basic.py    # basic engine tests
+    ├── test_xkernel_basic.py      # kernel correctness
+    └── test_lenses.py             # lens correctness
 ```
 
 ---
 
 ## Installation
 
-Editable install (recommended for development):
+Development install:
 
 ```bash
 pip install -e .
@@ -63,108 +71,123 @@ python -c "from xkernel import XKernelConfig; print(XKernelConfig())"
 
 ## Core API
 
-### Create a configuration
+### Configuration
 
 ```python
 from xkernel import XKernelConfig
-
 cfg = XKernelConfig(size=64, dim=6, eta=0.1)
 ```
 
-### Seed an initial state
+### Seeding initial conditions
 
 ```python
 from xkernel import seed_zero, seed_impulse
-
 initial = seed_impulse(cfg, index=3, component=0, amplitude=1.0)
 ```
 
-### Run the engine
+### Running the engine
 
 ```python
 from xkernel import XKernel
-
 kernel = XKernel(cfg)
 states = list(kernel.run(initial, steps=128))
 ```
 
-### Export a trace to JSON (for viewers / logs)
+### Exporting a trace
 
 ```python
 from xkernel import trace_to_dict
-
 trace = trace_to_dict(states)
 ```
 
 ---
 
+# Lenses
+
 ## Waveform Lens (`lens_wave.py`)
 
-The wave lens interprets a 1-D X-kernel evolution as a **time-indexed waveform**.
-
-Extract a waveform from a given site/component:
+Turn engine history into a **1-D waveform**:
 
 ```python
 from xkernel import wave_from_states, ascii_wave
-
 wave = wave_from_states(states, site=3, component=0, normalize=True)
 print(ascii_wave(wave, height=10))
 ```
 
-Generate analytic waveforms:
+Generate analytic waves:
 
 ```python
 from xkernel import analytic_wave
-
 sq = analytic_wave("square", steps=64, amplitude=1.0, frequency=2.0)
-print(ascii_wave(sq, height=12))
 ```
 
-Supported analytic wave types:
-- `"sine"`
-- `"square"`
-- `"triangle"`
-- `"saw"`
+Supported analytic types:
+
+- "sine"
+- "square"
+- "triangle"
+- "saw"
 
 ---
 
-## Viewer Example (`viewer_bounce_dot.py`)
+## Einstein Lens (`lens_einstein.py`)
 
-Run an ASCII bounce-dot simulation:
+Projects a waveform into:
+
+- **Curvature**
+- **Strain**
+- **Energy**
+
+Demo:
 
 ```bash
-python -m xkernel.viewer_bounce_dot --points 24 --steps 2000 --sleep 0.02 --single-line --restitution .8
+python -m xkernel.demo_einstein
 ```
 
-Single-line oscilloscope mode:
+---
+
+## Schrödinger Lens (`lens_schrodinger.py`)
+
+Complex decomposition:
+
+- **Amplitude**
+- **Phase**
+
+Demo:
 
 ```bash
-python -m xkernel.viewer_bounce_dot --points 20 --steps 400 --speed 1.2```
+python -m xkernel.demo_schrodinger
+```
 
 ---
 
-## Philosophy
+## Shannon Lens (`lens_shannon.py`)
 
-**xkernel** is designed as a *substrate*:  
-a minimal, deterministic, composable engine that can support multiple high-level
-interpretations (lenses):
+Information-theoretic projection:
 
-- Waveform lens  
-- Euclidean Mechanics lens  
-- DAT (Discrete Action Theory) lens  
-- GTORC coherence lens  
-- Visualization lenses  
+- **entropy_series**
+- **probability**
+- **entropy** (scalar)
 
-The kernel never changes — the *lens* changes the meaning.
+Demo:
 
-This makes `xkernel` ideal for research environments that require clean,
-interpretable dynamical systems.
+```bash
+python -m xkernel.demo_shannon
+```
 
 ---
 
-## Tests
+# Viewer Example (`viewer_bounce_dot.py`)
 
-Run the included tests:
+ASCII simulation mode:
+
+```bash
+python -m xkernel.viewer_bounce_dot --points 24 --steps 2000 --sleep 0.02
+```
+
+---
+
+# Tests
 
 ```bash
 pytest -q
@@ -172,44 +195,21 @@ pytest -q
 
 ---
 
-## Versioning
-
-This package uses semantic versioning.
-
-Current release:
+# Versioning
 
 ```
-v0.1.0 — clean API, engine core, wave lens, ASCII viewers
-```
-
-Tag a new release:
-
-```bash
-git commit -am "Release v0.1.0"
-git tag -a v0.1.0 -m "xkernel v0.1.0 initial stable release"
-git push && git push --tags
+v0.2.0 — added full lens demo suite (Einstein, Schrödinger, Shannon)
 ```
 
 ---
 
-## License
+# License
 
-Currently unpublished. All rights reserved by project owner.
-
----
-
-## Future Directions
-
-- Real-time oscilloscope viewer  
-- FFT lens (frequency-domain interpretation)  
-- Geometry & coherence lenses  
-- Multi-channel waveform viewers  
-- WASM/Browser viewer backend  
-- GPU-accelerated lattice kernel  
+All rights reserved by project owner.
 
 ---
 
-## Credits
+# Credits
 
-Engine design and geometry concepts: **Scott Cave**  
-Lens architecture: **EuMech / GTORC project**
+Engine design & geometry direction: **Scott Cave**  
+Lens architecture: **EuMech / GTORC Suite**
