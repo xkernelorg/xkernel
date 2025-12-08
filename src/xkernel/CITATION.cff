@@ -1,9 +1,0 @@
-cff-version: 1.2.0
-title: "xkernel"
-message: "If you use xkernel in academic work, please cite this release."
-authors:
-  - family-names: Cave
-    given-names: Scott
-version: "0.1.0"
-date-released: "2025-02-08"
-license: "MIT"

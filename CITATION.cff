@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+type: software
+title: "xkernel: deterministic X-field engine with lens architecture"
+message: "If you use xkernel in academic work, please cite this release."
+authors:
+  - family-names: Cave
+    given-names: Scott Allen
+    orcid: "https://orcid.org/0009-0000-0888-4232"
+version: "0.1.0"
+date-released: "2025-02-08"
+doi: "10.5281/zenodo.17859535"
+repository-code: "https://github.com/YOURNAME/xkernel"
+license: "MIT"
