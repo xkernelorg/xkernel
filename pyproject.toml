@@ -5,9 +5,11 @@ description = "Deterministic X-field engine with lens architecture."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
+
 authors = [
     { name = "Scott Allen Cave" }
 ]
+
 dependencies = []
 
 classifiers = [
@@ -25,3 +27,7 @@ DOI = "https://doi.org/10.5281/zenodo.17859535"
 [build-system]
 requires = ["setuptools>=65", "wheel", "build"]
 build-backend = "setuptools.build_meta"
+
+[project.scripts]
+# Correct CLI entry — points to src/xkernel/cli.py
+xkernel = "xkernel.cli:main"

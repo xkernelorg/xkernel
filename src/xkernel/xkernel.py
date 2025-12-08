@@ -290,3 +290,25 @@ def _infer_trace_params(states: List[Dict[str, Any]]) -> Tuple[int, int]:
     size = len(field)
     dim = len(field[0]) if size > 0 else 0
     return dim, size
+
+
+def main() -> None:
+    # TODO: wire this to your real kernel interface
+    # e.g., parse args and run a default demo
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="xkernel")
+    parser.add_argument("--demo", choices=["einstein", "shannon", "wave"], default="einstein")
+    args = parser.parse_args()
+
+    if args.demo == "einstein":
+        print("Running Einstein lens…")
+        # call your real function here
+    elif args.demo == "shannon":
+        print("Running Shannon lens…")
+    elif args.demo == "wave":
+        print("Running wave lens…")
+
+
+if __name__ == "__main__":
+    main()
