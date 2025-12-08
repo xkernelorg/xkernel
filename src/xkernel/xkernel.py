@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 # Metadata
 # ---------------------------------------------------------------------------
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 ENGINE_NAME = "xkernel"
 
 __all__ = [

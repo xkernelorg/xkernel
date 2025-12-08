@@ -1,6 +1,6 @@
 [project]
 name = "xkernel"
-version = "0.1.0"
+version = "0.2.0"
 description = "Deterministic X-field engine with lens architecture."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -20,9 +20,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/YOURNAME/xkernel"
-Issues = "https://github.com/YOURNAME/xkernel/issues"
-DOI = "https://doi.org/10.5281/zenodo.17859535"
+Homepage = "https://github.com/xkernelorg/xkernel"
+Issues = "https://github.com/xkernelorg/xkernel/issues"
+DOI = "https://doi.org/10.5281/zenodo.TBD"
 
 [build-system]
 requires = ["setuptools>=65", "wheel", "build"]
