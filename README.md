@@ -205,11 +205,14 @@ v0.2.0 — added full lens demo suite (Einstein, Schrödinger, Shannon)
 
 # License
 
-All rights reserved by project owner.
+This project is licensed under the **MIT License**.  
+See [`LICENSE`](./LICENSE) for details.
 
 ---
 
-# Credits
+## 📘 Citation
 
-Engine design & geometry direction: **Scott Cave**  
-Lens architecture: **EuMech / GTORC Suite**
+If you use this software in academic work, please cite:
+
+Cave, S. A. (2025). *xkernel: Deterministic X-field engine with lens architecture (v0.2.0)*. Zenodo. https://doi.org/10.5281/zenodo.17859535
+

@@ -1,5 +1,3 @@
-[project]
-name = "xkernel"
 version = "0.2.0"
 description = "Deterministic X-field engine with lens architecture."
 readme = "README.md"
@@ -22,7 +20,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/xkernelorg/xkernel"
 Issues = "https://github.com/xkernelorg/xkernel/issues"
-DOI = "https://doi.org/10.5281/zenodo.TBD"
+DOI = "https://doi.org/10.5281/zenodo.17859535"
 
 [build-system]
 requires = ["setuptools>=65", "wheel", "build"]
