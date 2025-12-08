@@ -1,185 +1,227 @@
-# src/xkernel/viewer_scope.py
 import argparse
 import math
-import os
+import sys
 import time
+from typing import List
 
-MODES = ("sine", "square", "triangle")
+RAMP = " .:-=+*#%@"
+
+def level_to_char(v: float) -> str:
+    if v <= 0.0:
+        return " "
+    if v >= 1.0:
+        return RAMP[-1]
+    idx = int(v * (len(RAMP) - 1) + 0.5)
+    if idx < 0:
+        idx = 0
+    elif idx >= len(RAMP):
+        idx = len(RAMP) - 1
+    return RAMP[idx]
 
 
-def sample_wave(mode: str, t: float, freq: float) -> float:
-    phase = 2.0 * math.pi * freq * t
-    s = math.sin(phase)
+def parse_size(size: str) -> tuple[int, int]:
+    try:
+        w_s, h_s = size.lower().split("x")
+        return int(w_s), int(h_s)
+    except Exception:
+        return 60, 20
+
+
+def sample_wave(angle: float, mode: str) -> float:
     if mode == "sine":
-        return s
+        return math.sin(angle)
     if mode == "square":
-        return 1.0 if s >= 0.0 else -1.0
+        return 1.0 if math.sin(angle) >= 0.0 else -1.0
     if mode == "triangle":
-        # nice symmetric triangle in [-1, 1]
-        return 2.0 / math.pi * math.asin(s)
-    return 0.0
+        return 2.0 / math.pi * math.asin(math.sin(angle))
+    if mode == "saw":
+        a = (angle + math.pi) % (2.0 * math.pi) - math.pi
+        return a / math.pi
+    return math.sin(angle)
 
 
-def build_frame(
-    samples,
-    width: int,
-    height: int,
-    persistence: int,
-    history,
-    use_grid: bool,
-) -> list[str]:
+def clamp(v: float, lo: float, hi: float) -> float:
+    if v < lo:
+        return lo
+    if v > hi:
+        return hi
+    return v
+
+
+def map_amp_to_row(val: float, height: int) -> int:
+    val = clamp(val, -1.0, 1.0)
     mid = height // 2
-    amp_rows = max(1, height // 2 - 2)
+    amp = max(1.0, (height - 2) * 0.5)
+    y = int(round(mid - val * amp))
+    if y < 0:
+        y = 0
+    elif y >= height:
+        y = height - 1
+    return y
 
-    # base background
-    frame = [["." for _ in range(width)] for _ in range(height)]
 
-    # optional grid
-    if use_grid:
-        x_spacing = max(4, width // 8)
-        for x in range(0, width, x_spacing):
+def make_buffer(width: int, height: int) -> List[List[float]]:
+    return [[0.0 for _ in range(width)] for _ in range(height)]
+
+
+def decay_buffer(buf: List[List[float]], pers: float) -> None:
+    if pers <= 0.0:
+        for y in range(len(buf)):
+            row = buf[y]
+            for x in range(len(row)):
+                row[x] = 0.0
+        return
+    factor = clamp(pers, 0.01, 0.99)
+    for y in range(len(buf)):
+        row = buf[y]
+        for x in range(len(row)):
+            row[x] *= factor
+
+
+def draw_time_scope(args: argparse.Namespace) -> None:
+    width, height = parse_size(args.size)
+    buf = make_buffer(width, height)
+    phase = 0.0
+    step = 0
+    freq = args.freq
+    freq2 = args.freq2
+    mode = args.mode
+    baseline_row = map_amp_to_row(args.off, height)
+
+    try:
+        while True:
+            step += 1
+            if args.trig == "free":
+                phase += 2.0 * math.pi * freq * args.speed
+            elif args.trig == "roll":
+                phase += 2.0 * math.pi * freq * args.speed * 0.3
+            else:
+                phase = 0.0
+
+            phase = math.fmod(phase, 2.0 * math.pi)
+
+            decay_buffer(buf, args.pers)
+
+            w_den = float(max(1, width - 1))
+            for x in range(width):
+                frac = x / w_den
+                angle = phase + 2.0 * math.pi * freq * frac
+                v1 = args.gain * sample_wave(angle, mode) + args.off
+                y1 = map_amp_to_row(v1, height)
+                buf[y1][x] = 1.0
+
+                if freq2 > 0.0:
+                    angle2 = phase * (freq2 / freq if freq != 0.0 else 1.0) + 2.0 * math.pi * freq2 * frac + args.phase2
+                    v2 = args.gain2 * sample_wave(angle2, mode) + args.off2
+                    y2 = map_amp_to_row(v2, height)
+                    buf[y2][x] = 1.0
+
+            sys.stdout.write("\x1b[H\x1b[2J")
+            header = (
+                f"toy-scope  mode={mode}  freq={freq:.2f}"
+                f"  speed={args.speed:.2f}  size={width}x{height}"
+                f"  gain={args.gain:.2f}  off={args.off:.2f}"
+                f"  trig={args.trig}  pers={args.pers:.2f}"
+                f"  step={step:04d}"
+            )
+            if freq2 > 0.0:
+                header += f"\nch2: freq2={freq2:.2f} gain2={args.gain2:.2f} off2={args.off2:.2f} phase2={args.phase2:.2f}"
+            sys.stdout.write(header + "\n\n")
+
             for y in range(height):
-                frame[y][x] = "|"
+                row_vals = buf[y]
+                line_chars = []
+                for x in range(width):
+                    ch = level_to_char(row_vals[x])
+                    if ch == " ":
+                        ch = "."
+                    line_chars.append(ch)
 
-    # center reference line
-    for x in range(width):
-        if use_grid and frame[mid][x] == "|":
-            frame[mid][x] = "+"
-        else:
-            if x % 2 == 0:
-                frame[mid][x] = "-"
+                if y == baseline_row:
+                    for x in range(0, width, 2):
+                        if line_chars[x] == ".":
+                            line_chars[x] = "-"
+                sys.stdout.write("".join(line_chars) + "\n")
 
-    # decay persistence
-    if history is not None:
-        for y in range(height):
-            row = history[y]
-            for x in range(width):
-                if row[x] > 0:
-                    row[x] -= 1
+            sys.stdout.flush()
+            time.sleep(args.speed)
+    except KeyboardInterrupt:
+        sys.stdout.write("\n")
+        sys.stdout.flush()
 
-    # draw current samples
-    for x, y in enumerate(samples):
-        # map y in [-1, 1] to row index
-        y_clamped = max(-1.0, min(1.0, y))
-        row = mid - int(round(y_clamped * amp_rows))
-        row = max(0, min(height - 1, row))
-        if history is not None:
-            history[row][x] = persistence
-        else:
-            frame[row][x] = "*"
 
-    # overlay persistence as stars
-    if history is not None:
-        for y in range(height):
-            for x in range(width):
-                if history[y][x] > 0:
-                    frame[y][x] = "*"
+def draw_lissajous(args: argparse.Namespace) -> None:
+    width, height = parse_size(args.size)
+    buf = make_buffer(width, height)
+    phase = 0.0
+    step = 0
+    freq_x = args.freq
+    freq_y = args.liss_ratio * args.freq
 
-    return ["".join(line) for line in frame]
+    try:
+        while True:
+            step += 1
+            decay_buffer(buf, args.pers)
+
+            points = max(width * 4, 200)
+            for i in range(points):
+                t = phase + 2.0 * math.pi * i / points
+                x_val = math.sin(2.0 * math.pi * freq_x * t)
+                y_val = math.sin(2.0 * math.pi * freq_y * t + args.liss_phase)
+                x = int(round((x_val + 1.0) * 0.5 * (width - 1)))
+                y = int(round((1.0 - (y_val + 1.0) * 0.5) * (height - 1)))
+                buf[y][x] = 1.0
+
+            sys.stdout.write("\x1b[H\x1b[2J")
+            header = (
+                f"toy-scope  mode=lissajous  fx={freq_x:.2f}  fy={freq_y:.2f}"
+                f"  ratio={args.liss_ratio:.2f}  speed={args.speed:.2f}"
+                f"  size={width}x{height}  pers={args.pers:.2f}  step={step:04d}"
+            )
+            sys.stdout.write(header + "\n\n")
+
+            for y in range(height):
+                row_vals = buf[y]
+                line_chars = []
+                for x in range(width):
+                    ch = level_to_char(row_vals[x])
+                    if ch == " ":
+                        ch = "."
+                    line_chars.append(ch)
+                sys.stdout.write("".join(line_chars) + "\n")
+
+            sys.stdout.flush()
+            phase += args.speed
+            phase = math.fmod(phase, 2.0 * math.pi)
+            time.sleep(args.speed)
+    except KeyboardInterrupt:
+        sys.stdout.write("\n")
+        sys.stdout.flush()
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="ASCII toy oscilloscope")
-    parser.add_argument("--mode", choices=MODES, default="sine")
-    parser.add_argument("--freq", type=float, default=2.0)
-    parser.add_argument("--speed", type=float, default=0.10)
-    parser.add_argument("--width", type=int, default=40)
-    parser.add_argument("--height", type=int, default=20)
+    parser = argparse.ArgumentParser(prog="xkernel.viewer_scope", description="ASCII toy oscilloscope")
+    parser.add_argument("--mode", choices=["sine", "square", "triangle", "saw", "lissajous"], default="sine")
+    parser.add_argument("--freq", type=float, default=3.0)
+    parser.add_argument("--freq2", type=float, default=0.0)
     parser.add_argument("--gain", type=float, default=1.0)
-    parser.add_argument("--offset", type=float, default=0.0)
-    parser.add_argument("--persistence", type=int, default=0)
-    parser.add_argument("--grid", action="store_true")
-    parser.add_argument(
-        "--trigger",
-        type=float,
-        default=None,
-        help="trigger level in [-1, 1] (rising edge); omit for free run",
-    )
-    parser.add_argument("--sleep", type=float, default=0.05)
-    parser.add_argument(
-        "--steps",
-        type=int,
-        default=0,
-        help="number of frames (0 = run forever)",
-    )
+    parser.add_argument("--off", type=float, default=0.0)
+    parser.add_argument("--gain2", type=float, default=1.0)
+    parser.add_argument("--off2", type=float, default=0.0)
+    parser.add_argument("--phase2", type=float, default=0.0)
+    parser.add_argument("--speed", type=float, default=0.08)
+    parser.add_argument("--size", type=str, default="60x20")
+    parser.add_argument("--trig", choices=["free", "lock", "roll"], default="free")
+    parser.add_argument("--pers", type=float, default=0.0)
+    parser.add_argument("--liss-ratio", type=float, default=2.0)
+    parser.add_argument("--liss-phase", type=float, default=math.pi / 2.0)
 
     args = parser.parse_args()
 
-    width = max(10, args.width)
-    height = max(5, args.height)
-    persistence = max(0, args.persistence)
-    history = (
-        [[0 for _ in range(width)] for _ in range(height)]
-        if persistence > 0
-        else None
-    )
-
-    t0 = 0.0
-    dt = 1.0 / width
-    step = 0
-
-    while True:
-        # generate more samples than needed when triggering so we can slide
-        horizon = width * 3 if args.trigger is not None else width
-        raw = [
-            sample_wave(args.mode, t0 + i * dt, args.freq)
-            for i in range(horizon)
-        ]
-
-        # apply gain + offset and clamp
-        scaled = [
-            max(-1.0, min(1.0, args.gain * y + args.offset)) for y in raw
-        ]
-
-        # simple rising-edge trigger
-        if args.trigger is not None:
-            level = args.trigger
-            idx = None
-            for i in range(1, len(scaled)):
-                if scaled[i - 1] < level <= scaled[i]:
-                    idx = i
-                    break
-            if idx is None:
-                window = scaled[:width]
-            else:
-                if idx + width >= len(scaled):
-                    idx = len(scaled) - width
-                window = scaled[idx : idx + width]
-        else:
-            window = scaled[:width]
-
-        lines = build_frame(
-            window,
-            width=width,
-            height=height,
-            persistence=persistence,
-            history=history,
-            use_grid=bool(args.grid),
-        )
-
-        os.system("clear")
-        header = (
-            f"toy-scope  mode={args.mode}"
-            f"  freq={args.freq:.2f}"
-            f"  speed={args.speed:.2f}"
-            f"  size={width}x{height}"
-            f"  gain={args.gain:.2f}"
-            f"  off={args.offset:.2f}"
-            f"  trig={args.trigger if args.trigger is not None else 'free'}"
-            f"  pers={persistence}"
-            f"  step={step:04d}"
-        )
-        print(header)
-        for line in lines:
-            print(line)
-
-        step += 1
-        if args.steps and step >= args.steps:
-            break
-
-        # advance time base
-        t0 += args.speed * dt
-        time.sleep(args.sleep)
+    if args.mode == "lissajous":
+        draw_lissajous(args)
+    else:
+        draw_time_scope(args)
 
 
 if __name__ == "__main__":
