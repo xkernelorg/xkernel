@@ -1,39 +1,29 @@
 [build-system]
-requires = ["setuptools>=65", "wheel", "build"]
+requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "xkernel"
-version = "0.2.0"
-description = "Deterministic X-field engine with lens architecture."
+version = "0.3.0"
+description = "Minimal deterministic X-kernel with filament, fiber, and bundle structures."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 
 authors = [
-    { name = "Scott Allen Cave" }
+  { name = "Scott Allen Cave" }
 ]
 
-dependencies = []
-
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent"
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent"
 ]
 
 [project.urls]
 Homepage = "https://github.com/xkernelorg/xkernel"
-Issues = "https://github.com/xkernelorg/xkernel/issues"
-DOI = "https://doi.org/10.5281/zenodo.17859535"
+Issues   = "https://github.com/xkernelorg/xkernel/issues"
 
 [project.scripts]
-# Correct CLI entry — points to src/xkernel/cli.py
 xkernel = "xkernel.cli:main"
-
-[tool.setuptools]
-package-dir = { "" = "src" }
-
-[tool.setuptools.packages.find]
-where = ["src"]

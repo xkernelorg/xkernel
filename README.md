@@ -1,218 +1,69 @@
 # 🌀 xkernel
-### Minimal Deterministic X-Field Engine with Modular Lens Architecture
-Version: **0.2.0**
-Engine: `XKernel`
+### Minimal Deterministic X-Kernel with Filaments, Fibers, and Bundles
+
+**xkernel** is a small, deterministic engine that evolves vectors with a local
+rule and organizes their histories into **filaments**, **fibers**, and
+**bundles**.
+
+Out of the box, xkernel ships with a simple linear update rule in ℝ^d so the
+package is:
+
+- deterministic
+- easy to test
+- semantically agnostic
+
+It does **not** define patterns or lenses. Those belong in downstream systems
+that consume xkernel's data structures.
 
 ---
 
-## Overview
-
-**xkernel** is a lightweight, deterministic computational engine for evolving  
-**1-D lattices of real-valued vectors**.
-
-Each lattice site holds an **X-vector** in ℝ⁶ (configurable).  
-Each timestep applies a strictly local, strictly deterministic update rule:
-
-\[
-X_i(t+1) = X_i(t) \\;+\; \eta\Big(A X_i(t) \\;+\; B\,[X_{i-1}(t) + X_{i+1}(t)]\Big)
-\]
-
-Key properties:
-
-- **Deterministic**: no randomness, fully reproducible  
-- **Pure Python**, zero dependencies  
-- **Stable JSON trace export**  
-- **Modular lens system**: different higher-level interpretations of the same dynamics  
-- **Used as a computational substrate** for EuMech, DAT, GTORC, waveform viewers, and geometric analysis  
-- **Includes Einstein / Schrödinger / Shannon information lenses**
-
----
-
-## Project Structure
-
-```
-xkernel/
-├── README.md
-├── pyproject.toml
-├── src/
-│   └── xkernel/
-│       ├── xkernel.py             # core deterministic engine
-│       ├── cli.py                 # command-line entry points
-│       ├── lens_wave.py           # waveform lens (analytic + engine-driven)
-│       ├── lens_einstein.py       # curvature / strain / energy lens
-│       ├── lens_schrodinger.py    # amplitude / phase decomposition lens
-│       ├── lens_shannon.py        # entropy-based information lens
-│       ├── viewer_bounce_dot.py   # ASCII simulation viewer
-│       ├── demo_einstein.py       # engine → wave → Einstein projection
-│       ├── demo_schrodinger.py    # engine → wave → Schrödinger projection
-│       └── demo_shannon.py        # engine → wave → Shannon projection
-└── tests/
-    ├── test_xkernel_basic.py      # kernel correctness
-    └── test_lenses.py             # lens correctness
-```
-
----
-
-## Installation
-
-Development install:
+## Quick start
 
 ```bash
+# from the repo root, in your venv
 pip install -e .
+
+# Run a demo extrusion
+xkernel demo --fibers 2 --filaments 3 --steps 8 --dim 4
 ```
 
-Verify:
+Example output:
+
+```text
+Bundle:
+  fibers: 2
+  filaments per fiber: 3
+  steps per filament: 8
+  dimension: 4
+```
+
+---
+
+## Core concepts
+
+```text
+XKernel      : s_{t+1} = s_t + η * w
+Filament     : [s_0, s_1, ..., s_T]
+Fiber        : { filament_id -> Filament }
+Bundle       : { fiber_id    -> Fiber }
+XEngine      : orchestrator building bundles from a spec
+ExtrusionSpec: small config object describing counts + dimension
+```
+
+The default rule uses a fixed weight vector so that traces are stable and
+predictable. You can later replace `XKernel` with a richer rule while keeping
+the same public API.
+
+---
+
+## Testing
 
 ```bash
-python -c "from xkernel import XKernelConfig; print(XKernelConfig())"
+pytest
 ```
 
 ---
 
-## Core API
+## License
 
-### Configuration
-
-```python
-from xkernel import XKernelConfig
-cfg = XKernelConfig(size=64, dim=6, eta=0.1)
-```
-
-### Seeding initial conditions
-
-```python
-from xkernel import seed_zero, seed_impulse
-initial = seed_impulse(cfg, index=3, component=0, amplitude=1.0)
-```
-
-### Running the engine
-
-```python
-from xkernel import XKernel
-kernel = XKernel(cfg)
-states = list(kernel.run(initial, steps=128))
-```
-
-### Exporting a trace
-
-```python
-from xkernel import trace_to_dict
-trace = trace_to_dict(states)
-```
-
----
-
-# Lenses
-
-## Waveform Lens (`lens_wave.py`)
-
-Turn engine history into a **1-D waveform**:
-
-```python
-from xkernel import wave_from_states, ascii_wave
-wave = wave_from_states(states, site=3, component=0, normalize=True)
-print(ascii_wave(wave, height=10))
-```
-
-Generate analytic waves:
-
-```python
-from xkernel import analytic_wave
-sq = analytic_wave("square", steps=64, amplitude=1.0, frequency=2.0)
-```
-
-Supported analytic types:
-
-- "sine"
-- "square"
-- "triangle"
-- "saw"
-
----
-
-## Einstein Lens (`lens_einstein.py`)
-
-Projects a waveform into:
-
-- **Curvature**
-- **Strain**
-- **Energy**
-
-Demo:
-
-```bash
-python -m xkernel.demo_einstein
-```
-
----
-
-## Schrödinger Lens (`lens_schrodinger.py`)
-
-Complex decomposition:
-
-- **Amplitude**
-- **Phase**
-
-Demo:
-
-```bash
-python -m xkernel.demo_schrodinger
-```
-
----
-
-## Shannon Lens (`lens_shannon.py`)
-
-Information-theoretic projection:
-
-- **entropy_series**
-- **probability**
-- **entropy** (scalar)
-
-Demo:
-
-```bash
-python -m xkernel.demo_shannon
-```
-
----
-
-# Viewer Example (`viewer_bounce_dot.py`)
-
-ASCII simulation mode:
-
-```bash
-python -m xkernel.viewer_bounce_dot --points 24 --steps 2000 --sleep 0.02
-```
-
----
-
-# Tests
-
-```bash
-pytest -q
-```
-
----
-
-# Versioning
-
-```
-v0.2.0 — added full lens demo suite (Einstein, Schrödinger, Shannon)
-```
-
----
-
-# License
-
-This project is licensed under the **MIT License**.  
-See [`LICENSE`](./LICENSE) for details.
-
----
-
-## 📘 Citation
-
-If you use this software in academic work, please cite:
-
-Cave, S. A. (2025). *xkernel: Deterministic X-field engine with lens architecture (v0.2.0)*. Zenodo. https://doi.org/10.5281/zenodo.17859535
-
+MIT — see `LICENSE`.
