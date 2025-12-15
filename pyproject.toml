@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xkernel"
-version = "0.3.0"
+version = "0.0.1"
 description = "Minimal deterministic X-kernel with filament, fiber, and bundle structures."
 readme = "README.md"
 requires-python = ">=3.12"
