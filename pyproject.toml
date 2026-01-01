@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xkernel"
-version = "0.0.1"
-description = "Minimal deterministic X-kernel with filament, fiber, and bundle structures."
+version = "2.0.0"
+description = "Invariant deterministic kernel: k=1, boolean closure, canonical execution + receipt hashing, strict CLI."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
@@ -28,4 +28,4 @@ Homepage = "https://github.com/xkernelorg/xkernel"
 Issues   = "https://github.com/xkernelorg/xkernel/issues"
 
 [project.scripts]
-xkernel = "xkernel.cli:main"
+xkernel = "xkernel.cli_kK:main"
