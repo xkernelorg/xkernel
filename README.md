@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18120560.svg)](https://doi.org/10.5281/zenodo.18120560)
+
 # xkernel
 ## Invariant Deterministic Kernel (k = 1, Boolean Closure)
 
