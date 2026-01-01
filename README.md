@@ -1,69 +1,113 @@
-# 🌀 xkernel
-### Minimal Deterministic X-Kernel with Filaments, Fibers, and Bundles
+# xkernel
+## Invariant Deterministic Kernel (k = 1, Boolean Closure)
 
-**xkernel** is a small, deterministic engine that evolves vectors with a local
-rule and organizes their histories into **filaments**, **fibers**, and
-**bundles**.
+xkernel is a minimal, invariant execution kernel.
 
-Out of the box, xkernel ships with a simple linear update rule in ℝ^d so the
-package is:
+It defines:
+- a single admissible action quantum (k = 1),
+- deterministic replay semantics,
+- boolean closure against a target state,
+- canonical execution hashing,
+- and tamper-evident receipts.
 
-- deterministic
-- easy to test
-- semantically agnostic
+xkernel is NOT a runtime engine, simulator, or pattern system.
+It has NO kernel object, NO mutable configuration, and NO hidden state.
 
-It does **not** define patterns or lenses. Those belong in downstream systems
-that consume xkernel's data structures.
-
----
-
-## Quick start
-
-```bash
-# from the repo root, in your venv
-pip install -e .
-
-# Run a demo extrusion
-xkernel demo --fibers 2 --filaments 3 --steps 8 --dim 4
-```
-
-Example output:
-
-```text
-Bundle:
-  fibers: 2
-  filaments per fiber: 3
-  steps per filament: 8
-  dimension: 4
-```
+The kernel is the law.
+Executions and receipts are the artifacts.
 
 ---
 
-## Core concepts
+## What xkernel guarantees
 
-```text
-XKernel      : s_{t+1} = s_t + η * w
-Filament     : [s_0, s_1, ..., s_T]
-Fiber        : { filament_id -> Filament }
-Bundle       : { fiber_id    -> Fiber }
-XEngine      : orchestrator building bundles from a spec
-ExtrusionSpec: small config object describing counts + dimension
-```
+- Determinism
+  Replaying the same execution always yields the same final state.
 
-The default rule uses a fixed weight vector so that traces are stable and
-predictable. You can later replace `XKernel` with a richer rule while keeping
-the same public API.
+- Admissibility
+  Any step with action != 1 is invalid.
+
+- Closure
+  Closure is a boolean: an execution either closes to a target state or it does not.
+
+- Canonical identity
+  Executions and receipts have stable, content-addressed identifiers:
+  - xk:sha256:... for executions
+  - xr:sha256:... for receipts
+
+- Tamper evidence
+  Any mutation of execution or receipt content changes its hash and fails verification.
+
+---
+
+## What xkernel does NOT do
+
+- No engine orchestration
+- No filaments, fibers, or bundles
+- No pattern detection or lenses
+- No identity, signing, or trust semantics
+- No backward compatibility with v1
+
+Those concerns belong in downstream systems.
+
+---
+
+## Installation
+
+    pip install -e .
+
+---
+
+## Command-line interface
+
+xkernel ships with a strict reference CLI.
+
+    xkernel --help
+
+Available commands:
+
+- validate      Validate execution admissibility and replay
+- hash          Compute execution content address (xk:sha256:...)
+- receipt       Emit receipt JSON for an execution (optional target closure)
+- verify        Verify receipt integrity against an execution
+- receipt-hash  Compute receipt content address (xr:sha256:...)
+
+Example:
+
+    xkernel validate exec.json
+    xkernel hash exec.json
+    xkernel receipt exec.json --target target.json > receipt.json
+    xkernel verify receipt.json exec.json
+
+---
+
+## Core model (conceptual)
+
+    StateVector  : immutable integer coordinate vector
+    Step         : delta + action (must equal k = 1)
+    Execution    : init + ordered steps + final
+    Closure      : boolean equality to a target under replay
+    Receipt      : canonical record of execution + closure
+
+There is no kernel instance.
+Correctness is enforced structurally.
 
 ---
 
 ## Testing
 
-```bash
-pytest
-```
+    pytest
+
+All tests assert invariants, determinism, hashing stability, and tamper detection.
+
+---
+
+## Versioning
+
+v2.0.0 introduces invariant semantics and removes all v1 engine concepts.
+There is no backward compatibility.
 
 ---
 
 ## License
 
-MIT — see `LICENSE`.
+MIT - see LICENSE.

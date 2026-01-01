@@ -15,3 +15,9 @@ build/
 exec.json
 target.json
 receipt.json
+
+# build artifacts
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
